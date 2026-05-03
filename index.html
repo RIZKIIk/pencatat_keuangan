@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SakuTracker - Web Keuangan Pelajar</title>
+    <meta name="description" content="SakuTracker adalah aplikasi pencatat keuangan pintar untuk pelajar. Kelola pengeluaran, pemasukan, dan tabungan dengan visualisasi data yang interaktif.">
+    <meta name="keywords" content="catatan keuangan, pengatur uang, tabungan, saku tracker, rizki afandi">
+    <meta name="author" content="Rizki Afandi">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="SakuTracker - Atur Uangmu Sekarang!">
+    <meta property="og:description" content="Aplikasi pencatat keuangan modern dengan fitur gamifikasi dan laporan otomatis.">
+    <meta property="og:image" content="media/icon.png">
+
+    <!-- PWA / Mobile Theme Color -->
+    <meta name="theme-color" content="#6366f1">
+
+    <link rel="icon" href="media/icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {} }
+        }
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="mesh-bg text-slate-800 dark:text-slate-100 transition-colors duration-500 pb-10">
+    
+    <!-- Loading Screen (Preloader) --> 
+    <div id="preloader" class="fixed inset-0 z-[100] flex items-center justify-center bg-white dark:bg-slate-900 transition-opacity duration-500">
+        <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+    </div>
+
+    <!-- Navbar Profesional --> 
+    <nav class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700 shadow-sm transition-colors duration-500 mb-8">
+        <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2"> 
+                <button id="sidebar-toggle" class="sm:hidden p-2 -ml-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg>
+                </button>
+                <img src="media/icon.png" class="w-9 h-9 rounded-xl object-cover shadow-md mr-1" alt="Logo"> 
+                <h1 class="text-xl sm:text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-indigo-600 to-emerald-500">SakuTracker</h1>
+            </div>
+
+            <!-- Navigasi Desktop (Segmented Control) -->
+            <div class="hidden md:flex items-center bg-slate-100/80 dark:bg-slate-900/80 p-1 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 transition-all">
+                <button id="nav-dashboard" class="px-5 py-2 rounded-xl text-xs font-bold transition-all duration-300 bg-white dark:bg-slate-800 shadow-sm text-indigo-600 ring-1 ring-black/5">Dashboard</button>
+                <button id="nav-stats" class="px-5 py-2 rounded-xl text-xs font-bold transition-all duration-300 text-slate-500 hover:text-indigo-600 hover:bg-white/50 dark:hover:bg-slate-800/50">Statistik</button>
+                <button id="nav-goals" class="px-5 py-2 rounded-xl text-xs font-bold transition-all duration-300 text-slate-500 hover:text-indigo-600 hover:bg-white/50 dark:hover:bg-slate-800/50">Tabungan</button>
+                <button id="nav-settings" class="px-5 py-2 rounded-xl text-xs font-bold transition-all duration-300 text-slate-500 hover:text-indigo-600 hover:bg-white/50 dark:hover:bg-slate-800/50">Pengaturan</button>
+            </div>
+
+            <div class="flex items-center gap-3 sm:gap-4"> 
+                <div class="hidden sm:flex items-center gap-2">
+                    <button onclick="exportToCSV()" title="Export Excel" class="p-2.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition active:scale-95 border border-emerald-200/50 dark:border-emerald-800/50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    </button>
+                    <button onclick="backupDataJSON()" title="Backup Data" class="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition active:scale-95 border border-indigo-200/50 dark:border-indigo-800/50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                    </button>
+                </div>
+                <button id="theme-toggle" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95 duration-200 border border-slate-200/50 dark:border-slate-700/50">
+                    <span id="theme-icon">🌙</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 opacity-0 pb-24"> 
+        
+        <!-- DASHBOARD VIEW -->
+        <div id="view-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            <!-- KOLOM KIRI (Sidebar: Gamifikasi, Saldo, & Form) -->
+            <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-24"> 
+                <!-- Card Gamifikasi (RPG Leveling) -->
+                <div class="glass-card p-4 sm:p-6 lg:p-8 rounded-2xl shadow-sm relative overflow-hidden transition-all duration-300">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="font-bold text-lg text-slate-700 dark:text-slate-200">Level Keuangan 🎮</h3>
+                    <span id="badge-level" class="text-2xl">🥚</span>
+                </div>
+                <div class="w-full bg-slate-200/50 dark:bg-slate-700/50 rounded-full h-3 mb-2 overflow-hidden">
+                    <div id="xp-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-1000" style="width: 0%"></div>
+                </div>
+                <p id="level-status" class="text-xs font-semibold text-slate-500 dark:text-slate-400 italic">
+                    Catat transaksi rutin untuk naik level!
+                </p>
+            </div>
+
+            <!-- Card Saldo -->
+            <div class="glass-card p-4 sm:p-6 lg:p-8 rounded-2xl shadow-sm text-center relative overflow-hidden transition-all duration-300">
+                <div class="absolute top-0 left-0 w-full h-1 bg-indigo-500 dark:bg-indigo-400"></div>
+                <p class="text-slate-500 dark:text-slate-400 text-sm font-semibold mb-1 mt-2">Total Saldo Saat Ini</p>
+                <h2 id="balance" class="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-4 transition-colors">Rp 0</h2>
+                <div class="flex justify-between text-sm border-t border-slate-100 dark:border-slate-700 pt-4">
+                    <div class="text-left w-1/2 border-r border-slate-100 dark:border-slate-700 pr-2">
+                        <p class="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Pemasukan</p>
+                        <p id="income" class="font-semibold text-emerald-500 dark:text-emerald-400 truncate">+Rp 0</p>
+                    </div>
+                    <div class="text-right w-1/2 pl-2">
+                        <p class="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Pengeluaran</p>
+                        <p id="expense" class="font-semibold text-rose-500 dark:text-rose-400 truncate">-Rp 0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Target Anggaran (Smart Budgeting) -->
+            <div class="glass-card p-4 sm:p-6 rounded-2xl shadow-sm border-t-4 border-indigo-500 transition-all duration-300">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-sm text-slate-700 dark:text-slate-200 uppercase tracking-wider">Target pengeluaran bulanan 🎯</h3>
+                    <input type="number" id="budget-input" placeholder="Batas Dana" class="w-24 p-1 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md outline-none focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div class="w-full bg-slate-200/50 dark:bg-slate-700/50 rounded-full h-2.5 mb-2 overflow-hidden">
+                    <div id="budget-progress" class="h-full bg-emerald-500 transition-all duration-1000" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <p id="budget-text" class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                        Atur batas anggaran agar keuangan terkontrol.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Form Input -->
+            <div class="glass-card p-5 sm:p-8 rounded-[2rem] shadow-xl relative z-10 border border-white/40 dark:border-slate-700/50">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="p-2 bg-indigo-500 rounded-lg shadow-lg shadow-indigo-500/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                    </div>
+                    <h3 class="font-black text-xl text-slate-800 dark:text-white tracking-tight">Catat Transaksi Baru</h3>
+                </div>
+                
+                <form id="form" class="space-y-5">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
+                                📅 Tanggal
+                            </label>
+                            <input type="date" id="date" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition-all shadow-sm dark:text-white" required>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
+                                🏷️ Tipe
+                            </label>
+                            <select id="type" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition-all shadow-sm dark:text-white appearance-none cursor-pointer">
+                                <option value="expense">Pengeluaran</option>
+                                <option value="income">Pemasukan</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
+                            🗂️ Kategori
+                        </label>
+                        <div id="category-trigger" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 flex justify-between items-center cursor-pointer transition-all shadow-sm hover:border-indigo-300 dark:hover:border-indigo-700">
+                            <span id="category-display" class="text-sm font-medium text-slate-600 dark:text-slate-200 truncate">Pilih Kategori</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                        <input type="hidden" id="category">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
+                            💰 Nominal
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">Rp</span>
+                            <input type="number" id="amount" min="0" placeholder="0" class="w-full p-3 pl-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-base font-bold transition-all shadow-sm dark:text-white placeholder-slate-300" required>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="flex items-center gap-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
+                            📝 Catatan
+                        </label>
+                        <input type="text" id="note" placeholder="Beli apa hari ini?" class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition-all shadow-sm dark:text-white placeholder-slate-400" required>
+                    </div>
+
+                    <button type="submit" id="submit-btn" class="w-full relative group bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl transition-all shadow-xl shadow-indigo-500/20 active:scale-[0.98] overflow-hidden">
+                        <div class="absolute inset-0 w-1/4 h-full bg-white/20 skew-x-[-30deg] -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                        <span class="relative flex items-center justify-center gap-2 uppercase tracking-widest text-xs">
+                            Simpan Transaksi
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        </span>
+                    </button>
+                </form>
+                </div>
+            </div>
+
+            <!-- KOLOM KANAN (Konten Utama: Riwayat) -->
+            <div class="lg:col-span-7 space-y-6"> 
+                <!-- Filter Global Periode (Pindah ke Dashboard agar bisa ganti bulan) -->
+                <div class="glass-card p-4 rounded-2xl flex flex-col sm:flex-row gap-4 items-center justify-between border-b-4 border-indigo-500/30">
+                    <div class="flex flex-col gap-1 w-full sm:w-auto">
+                        <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Periode Riwayat</label>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeMonth(-1)" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition">◀</button>
+                            <input type="month" id="global-period-filter" class="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-600 dark:text-indigo-400">
+                            <button onclick="changeMonth(1)" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition">▶</button>
+                        </div>
+                    </div>
+                    <button onclick="clearPeriodFilter()" class="text-[10px] font-bold text-indigo-500 hover:underline">Tampilkan Semua Waktu</button>
+                </div>
+
+                <div class="glass-card p-4 sm:p-6 lg:p-8 rounded-2xl shadow-sm transition-all duration-300">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                        <h3 class="font-bold text-lg text-slate-700 dark:text-slate-200">Riwayat Transaksi 👣</h3>
+                        <select id="filter-history" class="p-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-xs text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-indigo-500 cursor-pointer transition-colors">
+                            <option value="all">Semua Riwayat</option>
+                            <option value="income">Pemasukan Saja</option>
+                            <option value="expense">Pengeluaran Saja</option>
+                        </select>
+                    </div> 
+                    <ul id="list" class="space-y-3 max-h-[60vh] lg:max-h-[75vh] overflow-y-auto pr-2"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATS VIEW -->
+        <div id="view-stats" class="hidden space-y-8">
+            <h2 class="text-3xl font-extrabold text-slate-800 dark:text-white mb-6">Analisis Keuanganmu 📊</h2>
+
+            <!-- Ringkasan Laporan Periodik & Trend Mode Filter -->
+            <div class="glass-card p-6 rounded-[2rem] shadow-xl border border-white/40 dark:border-slate-700/50">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <h3 class="font-black text-xl text-slate-800 dark:text-white tracking-tight">Ringkasan Laporan</h3>
+                    <div class="flex flex-col gap-1 w-full sm:w-auto">
+                        <label class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">Tampilan Grafik</label>
+                        <select id="trend-mode-filter" class="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-sm text-slate-600 dark:text-slate-300 appearance-none cursor-pointer">
+                            <option value="weekly">Mingguan (7 Hari Terakhir)</option>
+                            <option value="monthly" selected>Bulanan (Sesuai Periode)</option>
+                            <option value="yearly">Tahunan (Tahun Terpilih)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+                    <div class="p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
+                        <p class="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-1">Minggu Ini</p>
+                        <p id="stat-weekly-expense" class="text-lg font-bold text-slate-700 dark:text-slate-200">Rp 0</p>
+                    </div>
+                    <div class="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
+                        <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-wider mb-1">Bulan Ini</p>
+                        <p id="stat-monthly-expense" class="text-lg font-bold text-slate-700 dark:text-slate-200">Rp 0</p>
+                    </div>
+                    <div class="col-span-2 md:col-span-1 p-4 bg-amber-50/50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-800/30">
+                        <p class="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-wider mb-1">Rata-rata Harian</p>
+                        <p id="stat-avg-daily" class="text-lg font-bold text-slate-700 dark:text-slate-200">Rp 0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tren Pengeluaran Chart (Full Width) -->
+            <div class="glass-card p-6 rounded-[2rem] shadow-xl border border-white/40 dark:border-slate-700/50">
+                <h3 id="trend-chart-title" class="font-black text-xl text-slate-800 dark:text-white tracking-tight mb-6">Tren Pengeluaran 📈</h3>
+                <div class="h-[250px] lg:h-[350px]">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Analisis Visual - Pemasukan -->
+                <div class="glass-card p-6 rounded-[2rem] shadow-xl border border-white/40 dark:border-slate-700/50">
+                    <h3 class="font-black text-xl text-slate-800 dark:text-white tracking-tight mb-6">Distribusi Pemasukan 💰</h3>
+                    <div class="space-y-6 bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800/30 transition-colors">
+                        <div class="flex flex-col items-center">
+                            <div class="relative w-full max-w-[200px] lg:max-w-[280px]"><canvas id="incomeChart"></canvas></div>
+                        </div>
+                        <div class="w-full">
+                            <p class="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 mb-2 uppercase tracking-wider border-b border-emerald-200 dark:border-emerald-800/50 pb-1">Detail Pemasukan</p>
+                            <div id="income-summary" class="space-y-2 mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analisis Visual - Pengeluaran -->
+                <div class="glass-card p-6 rounded-[2rem] shadow-xl border border-white/40 dark:border-slate-700/50">
+                    <h3 class="font-black text-xl text-slate-800 dark:text-white tracking-tight mb-6">Distribusi Pengeluaran 💸</h3>
+                    <div class="space-y-6 bg-rose-50/50 dark:bg-rose-900/10 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30 transition-colors">
+                        <div class="flex flex-col items-center">
+                            <div class="relative w-full max-w-[200px] lg:max-w-[280px]"><canvas id="expenseChart"></canvas></div>
+                        </div>
+                        <div class="w-full">
+                            <p class="text-[10px] font-bold text-rose-500 dark:text-rose-400 mb-2 uppercase tracking-wider border-b border-rose-200 dark:border-rose-800/50 pb-1">Detail Pengeluaran</p>
+                            <div id="expense-summary" class="space-y-2 mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nasehat Keuangan -->
+            <div class="glass-card p-6 rounded-[2rem] shadow-xl border border-white/40 dark:border-slate-700/50 border-l-4 border-indigo-500 relative overflow-hidden group">
+                <div class="absolute -right-4 -bottom-4 text-6xl opacity-10 group-hover:scale-110 transition-transform duration-500">💡</div>
+                <div class="flex items-center gap-3 mb-3">
+                    <h3 class="font-black text-xl text-slate-800 dark:text-white tracking-tight">Tips Keuangan Untukmu 💎</h3>
+                </div>
+                <p id="financial-advice-text" class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed italic">
+                    Sedang menganalisis data keuanganmu...
+                </p>
+            </div>
+        </div>
+
+        <!-- GOALS VIEW -->
+        <div id="view-goals" class="hidden space-y-8">
+            <div class="glass-card p-6 sm:p-8 rounded-3xl shadow-sm">
+                <h2 class="text-2xl font-extrabold text-slate-700 dark:text-slate-100 mb-2">Target Tabungan 🚀</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">Apa barang impianmu selanjutnya? Yuk, mulai menabung di sini!</p>
+                
+                <form id="goal-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div class="md:col-span-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nama Barang</label>
+                        <input type="text" id="goal-name" placeholder="Contoh: iPhone 16" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm" required>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Harga Target (Rp)</label>
+                        <input type="number" id="goal-price" placeholder="Harga" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm" required>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Target Tanggal (Opsional)</label>
+                        <input type="date" id="goal-date" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm">
+                    </div>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition active:scale-95 shadow-lg shadow-indigo-500/20">
+                        Tambah Target
+                    </button>
+                </form>
+            </div>
+
+            <div id="goals-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Goals will be rendered here -->
+            </div>
+        </div>
+
+        <!-- SETTINGS VIEW -->
+        <div id="view-settings" class="hidden space-y-6">
+            <div class="glass-card p-6 rounded-3xl border-l-4 border-indigo-500">
+                <h3 class="font-bold text-xl text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">👤 Profil Pengguna</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nama Panggilan</label>
+                        <input type="text" id="setting-user-name" placeholder="Siapa namamu?" class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Simbol Mata Uang</label>
+                        <input type="text" id="setting-currency-symbol" value="Rp" class="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <button onclick="savePreferences()" class="mt-4 bg-indigo-600 text-white text-xs font-bold py-2 px-6 rounded-full hover:bg-indigo-700 transition active:scale-95 shadow-lg shadow-indigo-500/20">Simpan Preferensi</button>
+            </div>
+
+            <div class="glass-card p-6 rounded-3xl border-l-4 border-rose-500">
+                <h3 class="font-bold text-xl text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">💾 Manajemen Data & Keamanan</h3>
+                <p class="text-xs text-slate-400 mb-6 italic">Kelola data cadangan atau bersihkan aplikasi jika ingin memulai dari awal.</p>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <p class="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-widest text-center">Pulihkan</p>
+                        <input type="file" id="import-file" class="hidden" accept=".json" onchange="handleImportJSON(event)">
+                        <button onclick="document.getElementById('import-file').click()" class="w-full py-2 bg-indigo-500 text-white rounded-xl text-xs font-bold hover:bg-indigo-600 transition">Import JSON</button>
+                    </div>
+                    <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <p class="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-widest text-center">Cadangan</p>
+                        <button onclick="backupDataJSON()" class="w-full py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:bg-emerald-600 transition">Export JSON</button>
+                    </div>
+                    <div class="p-4 bg-rose-50 dark:bg-rose-900/10 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+                        <p class="text-[10px] font-bold text-rose-500 mb-2 uppercase tracking-widest text-center">Bersihkan</p>
+                        <button onclick="resetAllData()" class="w-full py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600 transition">Reset Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <canvas id="fireworks-canvas" class="fixed inset-0 pointer-events-none z-[105]"></canvas>
+    </main>
+
+    <!-- Modal Edit Transaksi -->
+    <div id="edit-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 transition-all">
+        <div class="glass-card w-full max-w-md p-6 rounded-3xl shadow-2xl animate-popIn !bg-white/95 dark:!bg-slate-900/95 border border-white/20">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-xl text-slate-700 dark:text-slate-200">Edit Catatan ✏️</h3>
+                <button id="close-modal" class="text-slate-400 hover:text-rose-500 transition-colors">
+                    <span class="text-2xl">✕</span>
+                </button>
+            </div>
+            <form id="edit-form" class="space-y-4">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Tanggal</label>
+                    <input type="date" id="edit-date" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-base text-slate-700 dark:text-slate-200" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Jenis</label>
+                    <select id="edit-type" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-base text-slate-700 dark:text-slate-200">
+                        <option value="expense">📉 Pengeluaran</option>
+                        <option value="income">📈 Pemasukan</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Kategori</label>
+                    <div id="edit-category-trigger" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 flex justify-between items-center cursor-pointer text-slate-700 dark:text-slate-200 transition-colors">
+                        <span id="edit-category-display" class="truncate font-medium">Pilih Kategori</span>
+                        <span class="text-[10px] opacity-50">▼</span>
+                    </div>
+                    <input type="hidden" id="edit-category">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Nominal (Rp)</label>
+                    <input type="number" id="edit-amount" min="0" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-base text-slate-700 dark:text-slate-200" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Keterangan</label>
+                    <input type="text" id="edit-note" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-base text-slate-700 dark:text-slate-200" required>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="button" id="cancel-edit" class="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95">Batal</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition active:scale-95 shadow-md">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Edit Goal -->
+    <div id="edit-goal-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 transition-all">
+        <div class="glass-card w-full max-w-md p-6 rounded-3xl shadow-2xl animate-popIn !bg-white/95 dark:!bg-slate-900/95 border border-white/20">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-xl text-slate-700 dark:text-slate-200">Edit Target 🚀</h3>
+                <button id="close-goal-modal" class="text-slate-400 hover:text-rose-500 transition-colors">
+                    <span class="text-2xl">✕</span>
+                </button>
+            </div>
+            <form id="edit-goal-form" class="space-y-4">
+                <input type="hidden" id="edit-goal-id">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Nama Barang</label>
+                    <input type="text" id="edit-goal-name" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-base text-slate-700 dark:text-slate-200" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Harga Target (Rp)</label>
+                    <input type="number" id="edit-goal-price" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-base text-slate-700 dark:text-slate-200" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Target Tanggal (Opsional)</label>
+                    <input type="date" id="edit-goal-date" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-base text-slate-700 dark:text-slate-200">
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="button" id="cancel-goal-edit" class="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95">Batal</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition active:scale-95 shadow-md">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Notifikasi & Konfirmasi -->
+    <div id="notification-modal" class="fixed inset-0 z-[110] hidden items-center justify-center bg-slate-900/40 backdrop-blur-md p-4">
+        <div class="glass-card w-full max-w-sm p-6 rounded-3xl shadow-2xl animate-popIn !bg-white/95 dark:!bg-slate-900/95 text-center border border-white/20">
+            <div id="noti-icon" class="text-5xl mb-4">🔔</div>
+            <h3 id="noti-title" class="font-bold text-xl text-slate-800 dark:text-slate-100 mb-2">Notifikasi</h3>
+            <p id="noti-message" class="text-sm text-slate-500 dark:text-slate-400 mb-8 leading-relaxed"></p>
+            <div class="flex gap-3">
+                <button id="noti-cancel" class="hidden flex-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold py-3 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95">Batal</button>
+                <button id="noti-confirm" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-2xl transition active:scale-95 shadow-lg shadow-indigo-500/20">
+                    Oke
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Verifikasi Keamanan (Custom Prompt) -->
+    <div id="verify-modal" class="fixed inset-0 z-[120] hidden items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+        <div class="glass-card w-full max-w-sm p-6 rounded-3xl shadow-2xl animate-popIn !bg-white/95 dark:!bg-slate-900/95 text-center">
+            <div class="text-5xl mb-4">🔐</div>
+            <h3 id="verify-title" class="font-bold text-xl text-slate-800 dark:text-slate-100 mb-2">Verifikasi Keamanan</h3>
+            <p id="verify-message" class="text-sm text-slate-500 dark:text-slate-400 mb-4"></p>
+            <div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl mb-6">
+                <p class="text-xs text-slate-400 mb-2 uppercase font-bold tracking-tighter">Masukkan Kode: <span id="verify-target-code" class="text-indigo-500 text-lg">0000</span></p>
+                <input type="number" id="verify-input" placeholder="----" class="w-full text-center text-2xl font-black bg-transparent outline-none text-slate-700 dark:text-slate-100 tracking-[10px]">
+            </div>
+            <div class="flex gap-3">
+                <button id="verify-cancel" class="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold py-3 rounded-2xl hover:bg-slate-300 transition">Batal</button>
+                <button id="verify-confirm" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-2xl transition">Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pilih Kategori (Custom Popup Grid) -->
+    <div id="cat-picker-modal" class="fixed inset-0 z-[130] hidden items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+        <div class="glass-card w-full max-w-md p-6 rounded-3xl shadow-2xl animate-popIn !bg-white/95 dark:!bg-slate-900/95 border border-white/20">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-xl text-slate-700 dark:text-slate-200 italic">Pilih Kategori 🎨</h3>
+                <button onclick="closeCategoryPicker()" class="text-slate-400 hover:text-rose-500 transition-colors text-2xl">✕</button>
+            </div>
+            <div id="category-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto pr-1">
+                <!-- Kategori akan di-render di sini secara dinamis -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigasi (Mobile & Tablet) -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300"></div>
+    <aside id="sidebar-menu" class="fixed top-0 left-0 bottom-0 w-72 z-[70] bg-white dark:bg-slate-900 shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out sm:hidden flex flex-col p-6 border-r border-slate-200 dark:border-slate-800">
+        <div class="flex items-center gap-3 mb-10">
+            <img src="media/icon.png" class="w-10 h-10 rounded-xl" alt="Logo">
+            <h2 class="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-emerald-400">SakuTracker</h2>
+        </div>
+        
+        <div class="flex flex-col gap-2">
+            <button id="mobile-nav-dashboard" class="flex items-center gap-4 p-4 rounded-2xl font-bold transition-all text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20">
+                <span class="text-2xl">🏠</span>
+                <span>Dashboard</span>
+            </button>
+            <button id="mobile-nav-stats" class="flex items-center gap-4 p-4 rounded-2xl font-semibold transition-all text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <span class="text-2xl">📊</span>
+                <span>Statistik</span>
+            </button>
+            <button id="mobile-nav-goals" class="flex items-center gap-4 p-4 rounded-2xl font-semibold transition-all text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <span class="text-2xl">🚀</span>
+                <span>Tabungan</span>
+            </button>
+            <button id="mobile-nav-settings" class="flex items-center gap-4 p-4 rounded-2xl font-semibold transition-all text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <span class="text-2xl">⚙️</span>
+                <span>Pengaturan</span>
+            </button>
+        </div>
+
+        <div class="mt-auto p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 text-center">Version 2.0</p>
+        </div>
+    </aside>
+
+    <footer class="glass-card mt-12 p-5 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400 transition-colors">
+        <p class="mb-2 text-[10px] italic opacity-70">💡 Tips: Jika data tidak langsung muncul, coba segarkan (refresh) halaman ini.</p>
+        <p>© 2026 SakuTracker • Dibuat dengan ❤️ oleh Rizz</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
